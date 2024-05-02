@@ -57,11 +57,10 @@ const updateStatusContact = async (req, res) => {
   res.json(result);
 };
 
-const getAll = ctrlWrapper(getAllContacts);
-const getById = ctrlWrapper(getOneContact);
-const remove = ctrlWrapper(deleteContact);
-const create = ctrlWrapper(createContact);
-const update = ctrlWrapper(updateContact);
-const updateStatus = ctrlWrapper(updateStatusContact);
-
-export default { getAll, getById, remove, create, update, updateStatus };
+export default {
+  getAll: ctrlWrapper(getAllContacts),
+  getById: ctrlWrapper(getOneContact),
+  remove: ctrlWrapper(deleteContact),
+  create: ctrlWrapper(createContact),
+  update: ctrlWrapper(updateContact),
+};
