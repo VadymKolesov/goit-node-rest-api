@@ -1,15 +1,15 @@
 import HttpError from "../helpers/HttpError.js";
 import ctrlWrapper from "../helpers/ctrlWrapper.js";
-import contactsService from "../services/contactsServices.js";
+import Contact from "../models/contact.js";
 
 const getAllContacts = async (req, res) => {
-  const result = await contactsService.listContacts();
+  const result = await Contact.find();
   res.json(result);
 };
 
 const getOneContact = async (req, res) => {
   const { id } = req.params;
-  const result = await contactsService.getContactById(id);
+  const result = await Contact.findById(id);
 
   if (!result) {
     throw HttpError(404);
@@ -20,7 +20,7 @@ const getOneContact = async (req, res) => {
 
 const deleteContact = async (req, res) => {
   const { id } = req.params;
-  const result = await contactsService.removeContact(id);
+  const result = await Contact.findByIdAndDelete(id);
 
   if (!result) {
     throw HttpError(404);
@@ -30,14 +30,14 @@ const deleteContact = async (req, res) => {
 };
 
 const createContact = async (req, res) => {
-  const result = await contactsService.addContact(req.body);
+  const result = await Contact.create(req.body);
 
   res.status(201).json(result);
 };
 
 const updateContact = async (req, res) => {
   const { id } = req.params;
-  const result = await contactsService.updateContact(id, req.body);
+  const result = await Contact.findByIdAndUpdate(id, req.body, { new: true });
 
   if (!result) {
     throw HttpError(404);
@@ -46,10 +46,10 @@ const updateContact = async (req, res) => {
   res.json(result);
 };
 
-const getAll = ctrlWrapper(getAllContacts);
-const getById = ctrlWrapper(getOneContact);
-const remove = ctrlWrapper(deleteContact);
-const create = ctrlWrapper(createContact);
-const update = ctrlWrapper(updateContact);
-
-export default { getAll, getById, remove, create, update };
+export default {
+  getAll: ctrlWrapper(getAllContacts),
+  getById: ctrlWrapper(getOneContact),
+  remove: ctrlWrapper(deleteContact),
+  create: ctrlWrapper(createContact),
+  update: ctrlWrapper(updateContact),
+};
