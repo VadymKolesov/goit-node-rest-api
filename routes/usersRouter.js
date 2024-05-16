@@ -4,6 +4,7 @@ import usersSchemas from "../schemas/usersSchemas.js";
 import usersControllers from "../controllers/usersControllers.js";
 import authenticate from "../middlewares/authenticate.js";
 import isValidId from "../middlewares/isValidId.js";
+import upload from "../middlewares/upload.js";
 
 const usersRouter = express.Router();
 
@@ -29,6 +30,13 @@ usersRouter.patch(
   isValidId,
   validateBody(usersSchemas.updateSubscriptionSchema),
   usersControllers.updateSubscription
+);
+
+usersRouter.patch(
+  "/avatar",
+  authenticate,
+  upload.single("avatar"),
+  usersControllers.updateAvatar
 );
 
 export default usersRouter;

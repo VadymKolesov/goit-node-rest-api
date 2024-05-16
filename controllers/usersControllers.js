@@ -3,6 +3,12 @@ import ctrlWrapper from "../helpers/ctrlWrapper.js";
 import HttpError from "../helpers/HttpError.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import gravatar from "gravatar";
+import path from "path";
+import fs from "fs/promises";
+import Jimp from "jimp";
+
+const avatarsDir = path.resolve("public/avatars");
 
 const register = async (req, res) => {
   const { email, password } = req.body;
@@ -13,9 +19,15 @@ const register = async (req, res) => {
     throw HttpError(409, "Email in use");
   }
 
+  const avatarURL = gravatar.url(email);
+
   const hashPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await User.create({ ...req.body, password: hashPassword });
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+  });
 
   res.status(201).json({
     user: {
@@ -97,10 +109,28 @@ const updateSubscription = async (req, res) => {
   });
 };
 
+const updateAvatar = async (req, res) => {
+  const { path: filePath } = req.file;
+
+  const image = await Jimp.read(filePath);
+  image.resize(250, 250).write(filePath);
+
+  const resultDir = avatarsDir + "/" + req.file.filename;
+
+  await fs.rename(filePath, resultDir);
+
+  const avatarURL = `/avatars/${req.file.filename}`;
+
+  await User.findByIdAndUpdate(req.user.id, { avatarURL });
+
+  res.json({ avatarURL });
+};
+
 export default {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   logout: ctrlWrapper(logout),
   current: ctrlWrapper(current),
   updateSubscription: ctrlWrapper(updateSubscription),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };
