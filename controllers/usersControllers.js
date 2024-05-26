@@ -110,6 +110,10 @@ const updateSubscription = async (req, res) => {
 };
 
 const updateAvatar = async (req, res) => {
+  if (!req.file) {
+    throw HttpError(400, "Image is required");
+  }
+
   const { path: filePath } = req.file;
 
   const image = await Jimp.read(filePath);
@@ -117,11 +121,11 @@ const updateAvatar = async (req, res) => {
 
   const resultDir = avatarsDir + "/" + req.file.filename;
 
-  await fs.rename(filePath, resultDir);
-
   const avatarURL = `/avatars/${req.file.filename}`;
 
   await User.findByIdAndUpdate(req.user.id, { avatarURL });
+
+  await fs.rename(filePath, resultDir);
 
   res.json({ avatarURL });
 };
