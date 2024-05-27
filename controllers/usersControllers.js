@@ -7,6 +7,8 @@ import gravatar from "gravatar";
 import path from "path";
 import fs from "fs/promises";
 import Jimp from "jimp";
+import mail from "../helpers/mail.js";
+import { nanoid } from "nanoid";
 
 const avatarsDir = path.resolve("public/avatars");
 
@@ -23,11 +25,28 @@ const register = async (req, res) => {
 
   const hashPassword = await bcrypt.hash(password, 10);
 
+  const verificationToken = nanoid();
+
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
+    verificationToken,
     avatarURL,
   });
+
+  const message = {
+    from: "api@mail.com",
+    to: newUser.email,
+    subject: `Thank you for your choice!`,
+    html: `<h1>Hi!</h1><p>To continue you should verify your email. Just click on this <a href="http://localhost:3000/api/users/verify/${verificationToken}">link</a></a></p>`,
+    text: `Hi! To continue you should verify your email. Just click on this link`,
+  };
+
+  try {
+    await mail.send(message);
+  } catch (error) {
+    throw HttpError(500);
+  }
 
   res.status(201).json({
     user: {
@@ -50,6 +69,10 @@ const login = async (req, res) => {
 
   if (!isValidPassword) {
     throw HttpError(401, "Email or password is wrong");
+  }
+
+  if (!user.verify) {
+    throw HttpError(401, "Please, verify your email");
   }
 
   const { SECRET_KEY } = process.env;
@@ -130,6 +153,55 @@ const updateAvatar = async (req, res) => {
   res.json({ avatarURL });
 };
 
+const verify = async (req, res) => {
+  const { verificationToken } = req.params;
+
+  const user = await User.findOneAndUpdate(
+    { verificationToken },
+    { verify: true, verificationToken: null }
+  );
+
+  if (!user) {
+    throw HttpError(404, "User not found");
+  }
+
+  res.status(200).json("Verification successful");
+};
+
+const repeatVerify = async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw HttpError(404, "User not found");
+  } else if (user.verify) {
+    throw HttpError(400, "Verification has already been passed");
+  }
+
+  const verificationToken = nanoid();
+
+  await User.findOneAndUpdate({ email }, { verificationToken });
+
+  const message = {
+    from: "api@mail.com",
+    to: user.email,
+    subject: `Thank you for your choice!`,
+    html: `<h1>Hi!</h1><p>To continue you should verify your email. Just click on this <a href="http://localhost:3000/api/users/verify/${verificationToken}">link</a></a></p>`,
+    text: `Hi! To continue you should verify your email. Just click on this link`,
+  };
+
+  try {
+    await mail.send(message);
+  } catch (error) {
+    throw HttpError(500);
+  }
+
+  res.status(200).json({
+    message: "Verification email sent",
+  });
+};
+
 export default {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
@@ -137,4 +209,6 @@ export default {
   current: ctrlWrapper(current),
   updateSubscription: ctrlWrapper(updateSubscription),
   updateAvatar: ctrlWrapper(updateAvatar),
+  verify: ctrlWrapper(verify),
+  repeatVerify: ctrlWrapper(repeatVerify),
 };

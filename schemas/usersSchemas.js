@@ -19,8 +19,13 @@ const updateSubscriptionSchema = Joi.object({
     .required(),
 });
 
+const verifyUserSchema = Joi.object({
+  email: Joi.string().pattern(emailRegexp).required(),
+});
+
 export default {
   registerUserSchema,
   loginUserSchema,
   updateSubscriptionSchema,
+  verifyUserSchema,
 };
