@@ -12,6 +12,18 @@ import { nanoid } from "nanoid";
 
 const avatarsDir = path.resolve("public/avatars");
 
+const { EMAIL, API_BASE_URL } = process.env;
+
+const message = (userEmail, verificationToken) => {
+  return {
+    from: EMAIL,
+    to: userEmail,
+    subject: `Thank you for your choice!`,
+    html: `<h1>Hi!</h1><p>To continue you should verify your email. Just click on this <a href="${API_BASE_URL}/api/users/verify/${verificationToken}">link</a></a></p>`,
+    text: `Hi! To continue you should verify your email. Just click on this link`,
+  };
+};
+
 const register = async (req, res) => {
   const { email, password } = req.body;
 
@@ -34,16 +46,8 @@ const register = async (req, res) => {
     avatarURL,
   });
 
-  const message = {
-    from: "api@mail.com",
-    to: newUser.email,
-    subject: `Thank you for your choice!`,
-    html: `<h1>Hi!</h1><p>To continue you should verify your email. Just click on this <a href="http://localhost:3000/api/users/verify/${verificationToken}">link</a></a></p>`,
-    text: `Hi! To continue you should verify your email. Just click on this link`,
-  };
-
   try {
-    await mail.send(message);
+    await mail.send(message(newUser.email, verificationToken));
   } catch (error) {
     throw HttpError(500);
   }
@@ -183,16 +187,8 @@ const repeatVerify = async (req, res) => {
 
   await User.findOneAndUpdate({ email }, { verificationToken });
 
-  const message = {
-    from: "api@mail.com",
-    to: user.email,
-    subject: `Thank you for your choice!`,
-    html: `<h1>Hi!</h1><p>To continue you should verify your email. Just click on this <a href="http://localhost:3000/api/users/verify/${verificationToken}">link</a></a></p>`,
-    text: `Hi! To continue you should verify your email. Just click on this link`,
-  };
-
   try {
-    await mail.send(message);
+    await mail.send(message(user.email, verificationToken));
   } catch (error) {
     throw HttpError(500);
   }
